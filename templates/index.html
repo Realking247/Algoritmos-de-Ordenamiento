@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Productos - LPII</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            background: #0f172a;
+            color: #f8fafc;
+            line-height: 1.5;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.6rem;
+        }
+
+        .subtitulo {
+            color: #94a3b8;
+            margin: -10px 0 20px;
+            font-size: 0.95rem;
+        }
+
+        .panel {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .controles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        button {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        button.secundario {
+            background: #0f766e;
+        }
+
+        button.secundario:hover {
+            background: #115e59;
+        }
+
+        input[type="number"] {
+            padding: 9px 12px;
+            border-radius: 6px;
+            width: 160px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .resultado-box {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: #0f172a;
+            border-left: 4px solid #3b82f6;
+            display: none;
+        }
+
+        .tabla-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            background: #1e293b;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 480px;
+        }
+
+        th,
+        td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background: #020617;
+            color: #38bdf8;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+        }
+
+        tr:hover td {
+            background: #263349;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Catálogo Dinámico de Productos — LPII</h1>
+    <p class="subtitulo">Backend Flask (Quicksort + Búsqueda Binaria) &amp; Fetch API</p>
+
+    <div class="panel">
+        <div class="controles">
+            <button onclick="cargar('precio', 'asc')">Menor Precio (Quicksort)</button>
+            <button onclick="cargar('precio', 'desc')">Mayor Precio (Quicksort)</button>
+            <button onclick="cargar('nombre', 'asc')">Ordenar por Nombre</button>
+            <button onclick="cargar('id', 'asc')">Ordenar por ID</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="controles">
+            <input type="number" id="input-id" placeholder="Ej: 105" min="1">
+            <button class="secundario" onclick="buscarPorId()">Búsqueda Binaria por ID</button>
+            <button onclick="correrBenchmark()">Benchmark: Quicksort vs Burbuja (1.000)</button>
+        </div>
+        <div id="caja-mensaje" class="resultado-box"></div>
+    </div>
+
+    <div class="tabla-wrapper">
+        <table id="tabla">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function cargar(campo, orden) {
+            const res = await fetch(`/api/productos?sort_by=${campo}&order=${orden}`);
+            const data = await res.json();
+            document.querySelector('#tabla tbody').innerHTML = data.map(p => `
+                <tr>
+                    <td><strong>#${p.id}</strong></td>
+                    <td>${p.nombre}</td>
+                    <td>${p.categoria || 'General'}</td>
+                    <td>$${Number(p.precio).toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function buscarPorId() {
+            const id = document.getElementById('input-id').value;
+            const caja = document.getElementById('caja-mensaje');
+            caja.style.display = 'block';
+
+            if (!id) {
+                caja.innerHTML = 'Escribe un número de ID (ej: 101 al 110).';
+                return;
+            }
+
+            const res = await fetch(`/api/productos/buscar?id=${encodeURIComponent(id)}`);
+            const data = await res.json();
+            caja.innerHTML = data.encontrado
+                ? `<strong>Encontrado (Búsqueda Binaria):</strong> ID #${data.producto.id} — ${data.producto.nombre} ($${Number(data.producto.precio).toFixed(2)})`
+                : `❌ ${data.mensaje}`;
+        }
+
+        async function correrBenchmark() {
+            const caja = document.getElementById('caja-mensaje');
+            caja.style.display = 'block';
+            caja.innerHTML = 'Ejecutando prueba con 1.000 elementos...';
+
+            const res = await fetch('/api/benchmark');
+            const data = await res.json();
+            caja.innerHTML = `<strong>Benchmark (${data.elementos} elementos):</strong> Quicksort: <strong>${data.quicksort_ms} ms</strong> | Burbuja: <strong>${data.burbuja_ms} ms</strong> — <em>${data.comparativa}</em>`;
+        }
+
+        cargar('precio', 'asc');
+    </script>
+</body>
+
+</html>

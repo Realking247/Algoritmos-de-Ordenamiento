@@ -1,0 +1,62 @@
+[
+    {
+        "id": 105,
+        "nombre": "Teclado Mecánico RGB",
+        "categoria": "Periféricos",
+        "precio": 65.00
+    },
+    {
+        "id": 101,
+        "nombre": "Mouse Inalámbrico Óptico",
+        "categoria": "Periféricos",
+        "precio": 22.50
+    },
+    {
+        "id": 108,
+        "nombre": "Monitor LED 24 Pulgadas",
+        "categoria": "Pantallas",
+        "precio": 145.00
+    },
+    {
+        "id": 103,
+        "nombre": "Memoria RAM 16GB DDR4",
+        "categoria": "Componentes",
+        "precio": 48.00
+    },
+    {
+        "id": 110,
+        "nombre": "Disco Sólido SSD 1TB",
+        "categoria": "Almacenamiento",
+        "precio": 72.00
+    },
+    {
+        "id": 102,
+        "nombre": "Audífonos con Micrófono",
+        "categoria": "Audio",
+        "precio": 35.00
+    },
+    {
+        "id": 107,
+        "nombre": "Webcam Full HD 1080p",
+        "categoria": "Video",
+        "precio": 42.00
+    },
+    {
+        "id": 104,
+        "nombre": "Base Enfriadora para Laptop",
+        "categoria": "Accesorios",
+        "precio": 19.99
+    },
+    {
+        "id": 109,
+        "nombre": "Hub USB-C 7 en 1",
+        "categoria": "Accesorios",
+        "precio": 29.50
+    },
+    {
+        "id": 106,
+        "nombre": "Alfombrilla Gamer XL",
+        "categoria": "Accesorios",
+        "precio": 14.00
+    }
+]
