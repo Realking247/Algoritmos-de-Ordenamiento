@@ -1,12 +1,43 @@
 from flask import Flask, jsonify, request, render_template
-import json, time, random, copy
+import json, time, random, copy, os, urllib.request
 
 app = Flask (__name__)
 
+# Contenido del catálogo alojado en Pinata/IPFS (el JSON sí se puede servir en el gateway)
+PINATA_GATEWAY = os.environ.get('PINATA_GATEWAY', 'https://magenta-faithful-scallop-75.mypinata.cloud')
+PINATA_CID = os.environ.get('PINATA_CID', 'bafybeienrc6o2dcj7ny5efqpdqga3muzhgk3xe23ugwgxe3p4svm3dk6ta')
+PINATA_URL = f'{PINATA_GATEWAY}/ipfs/{PINATA_CID}/productos.json'
+
+_CACHE = {'datos': None, 'ts': 0.0, 'fuente': 'local'}
+_CACHE_TTL = 300  # segundos
+
+
+def _productos_desde_pinata():
+    peticion = urllib.request.Request(
+        PINATA_URL, headers={'User-Agent': 'catalogo-flask-lpii/1.0'}
+    )
+    with urllib.request.urlopen(peticion, timeout=3) as respuesta:
+        datos = json.loads(respuesta.read().decode('utf-8'))
+    if not isinstance(datos, list) or not datos:
+        raise ValueError('Pinata devolvió un catálogo vacío o inválido')
+    return datos
+
+
 #(soporte de acentos)
 def cargar_productos():
-   with open ('productos.json', 'r', encoding='utf-8') as f:
-            return json.load (f)
+    ahora = time.time()
+    if _CACHE['datos'] is not None and ahora - _CACHE['ts'] < _CACHE_TTL:
+        return copy.deepcopy(_CACHE['datos'])
+
+    try:
+        datos = _productos_desde_pinata()
+        _CACHE.update({'datos': datos, 'ts': ahora, 'fuente': 'pinata'})
+        return copy.deepcopy(datos)
+    except Exception:
+        # Si Pinata no responde, se usa el JSON local incluido en el despliegue
+        with open('productos.json', 'r', encoding='utf-8') as f:
+            _CACHE.update({'datos': json.load(f), 'ts': ahora, 'fuente': 'local'})
+            return copy.deepcopy(_CACHE['datos'])
 
    #1.Quicksort modular
     
@@ -61,7 +92,21 @@ def get_productos():
   order = request.args.get('order', 'asc') == 'desc'
   if productos and sort_by not in productos[0]:
     sort_by = 'precio'
-  return jsonify(quicksort(productos, sort_by, reverse=order))
+  respuesta = jsonify(quicksort(productos, sort_by, reverse=order))
+  respuesta.headers['X-Fuente-Datos'] = _CACHE['fuente']
+  return respuesta
+
+    # Estado de la integración con Pinata/IPFS
+@app.route('/api/pinata')
+def estado_pinata():
+    productos = cargar_productos()
+    return jsonify({
+        'gateway': PINATA_GATEWAY,
+        'cid': PINATA_CID,
+        'url': PINATA_URL,
+        'fuente': _CACHE['fuente'],
+        'productos': len(productos)
+    })
 
     # Buscar producto por ID mediante Búsqueda Binaria
 @app.route('/api/productos/buscar')
